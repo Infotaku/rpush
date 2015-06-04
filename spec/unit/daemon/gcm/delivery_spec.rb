@@ -42,9 +42,8 @@ describe Rpush::Daemon::Gcm::Delivery do
     it 'creates a new notification for the unavailable devices' do
       notification.update_attributes(registration_ids: %w(id_0 id_1 id_2), data: { 'one' => 1 }, collapse_key: 'thing', delay_while_idle: true)
       allow(response).to receive_messages(header: { 'retry-after' => 10 })
-      attrs = { 'collapse_key' => 'thing', 'delay_while_idle' => true, 'app_id' => app.id }
-      expect(store).to receive(:create_gcm_notification).with(attrs, notification.data,
-                                                              %w(id_0 id_2), now + 10.seconds, notification.app)
+
+      expect(store).to receive(:create_gcm_notification).with(notification, %w(id_0 id_2), now + 10.seconds)
       perform_with_rescue
     end
 
@@ -218,7 +217,7 @@ describe Rpush::Daemon::Gcm::Delivery do
       it 'logs that the notification will be retried' do
         notification.retries = 1
         notification.deliver_after = now + 2
-        expect(Rpush.logger).to receive(:warn).with("[MyApp] All recipients unavailable. Notification #{notification.id} will be retried after 2012-10-14 00:00:02 (retry 1).")
+        expect(Rpush.logger).to receive(:warn).with("[MyApp] All recipients unavailable. Notification #{notification.id} will be retried after #{notification.deliver_after.strftime('%Y-%m-%d %H:%M:%S')} (retry 1).")
         perform
       end
     end
@@ -260,7 +259,7 @@ describe Rpush::Daemon::Gcm::Delivery do
     it 'logs a warning that the notification will be retried.' do
       notification.retries = 1
       notification.deliver_after = now + 2
-      expect(logger).to receive(:warn).with("[MyApp] GCM responded with an Service Unavailable Error. Notification #{notification.id} will be retried after 2012-10-14 00:00:02 (retry 1).")
+      expect(logger).to receive(:warn).with("[MyApp] GCM responded with an Service Unavailable Error. Notification #{notification.id} will be retried after #{notification.deliver_after.strftime('%Y-%m-%d %H:%M:%S')} (retry 1).")
       perform
     end
 
@@ -290,8 +289,8 @@ describe Rpush::Daemon::Gcm::Delivery do
 
     it 'logs a warning that the notification has been re-queued.' do
       notification.retries = 3
-      notification.deliver_after = now + 2**3
-      expect(Rpush.logger).to receive(:warn).with("[MyApp] GCM responded with an Internal Error. Notification #{notification.id} will be retried after #{(now + 2**3).strftime('%Y-%m-%d %H:%M:%S')} (retry 3).")
+      notification.deliver_after = (now + 2**3)
+      expect(Rpush.logger).to receive(:warn).with("[MyApp] GCM responded with an Internal Error. Notification #{notification.id} will be retried after #{notification.deliver_after.strftime('%Y-%m-%d %H:%M:%S')} (retry 3).")
       perform
     end
 

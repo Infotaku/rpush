@@ -151,8 +151,7 @@ module Rpush
         end
 
         def create_new_notification(response, registration_ids)
-          attrs = { 'app_id' => @notification.app_id, 'collapse_key' => @notification.collapse_key, 'delay_while_idle' => @notification.delay_while_idle }
-          Rpush::Daemon.store.create_adm_notification(attrs, @notification.data, registration_ids, deliver_after_header(response), @notification.app)
+          Rpush::Daemon.store.create_adm_notification(@notification, registration_ids, deliver_after_header(response))
         end
 
         def deliver_after_header(response)

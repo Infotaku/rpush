@@ -137,14 +137,12 @@ module Rpush
           end
         end
 
-        def create_gcm_notification(attrs, data, registration_ids, deliver_after, app)
-          notification = Rpush::Client::ActiveRecord::Gcm::Notification.new
-          create_gcm_like_notification(notification, attrs, data, registration_ids, deliver_after, app)
+        def create_gcm_notification(old_notification, registration_ids, deliver_after) # rubocop:disable ParameterLists
+          create_gcm_like_notification(Rpush::Client::ActiveRecord::Gcm::Notification.new, old_notification, registration_ids, deliver_after)
         end
 
-        def create_adm_notification(attrs, data, registration_ids, deliver_after, app)
-          notification = Rpush::Client::ActiveRecord::Adm::Notification.new
-          create_gcm_like_notification(notification, attrs, data, registration_ids, deliver_after, app)
+        def create_adm_notification(old_notification, registration_ids, deliver_after) # rubocop:disable ParameterLists
+          create_gcm_like_notification(Rpush::Client::ActiveRecord::Adm::Notification.new, old_notification, registration_ids, deliver_after)
         end
 
         def update_app(app)
@@ -175,15 +173,17 @@ module Rpush
 
         private
 
-        def create_gcm_like_notification(notification, attrs, data, registration_ids, deliver_after, app) # rubocop:disable ParameterLists
+        def create_gcm_like_notification(new_notification, old_notification, registration_ids, deliver_after) # rubocop:disable ParameterLists
           with_database_reconnect_and_retry do
-            notification.assign_attributes(attrs)
-            notification.data = data
-            notification.registration_ids = registration_ids
-            notification.deliver_after = deliver_after
-            notification.app = app
-            notification.save!
-            notification
+            old_notification.attributes.each_pair do |name, value|
+              new_notification[name] = value unless name.to_sym.in?([:id, :registration_ids, :deliver_after])
+            end
+
+            new_notification.registration_ids = registration_ids
+            new_notification.deliver_after = deliver_after
+            new_notification.app = old_notification.app
+            new_notification.save!
+            new_notification
           end
         end
 

@@ -300,7 +300,16 @@ describe Rpush::Daemon::Store::Redis do
     let(:attributes) { { device_token: 'ab' * 32 } }
     let(:registration_ids) { %w(123 456) }
     let(:deliver_after) { time + 10.seconds }
-    let(:args) { [attributes, data, registration_ids, deliver_after, app] }
+    let(:old_notification) {
+      n = Rpush::Client::Redis::Gcm::Notification.new(attributes)
+      n.data = data
+      n.registration_ids = registration_ids
+      n.deliver_after = deliver_after
+      n.app = app
+      n.save!
+      n
+    }
+    let(:args) { [old_notification, registration_ids, deliver_after] }
 
     it 'sets the given attributes' do
       new_notification = store.create_gcm_notification(*args)
@@ -333,7 +342,16 @@ describe Rpush::Daemon::Store::Redis do
     let(:attributes) { { app_id: app.id, collapse_key: 'ckey', delay_while_idle: true } }
     let(:registration_ids) { %w(123 456) }
     let(:deliver_after) { time + 10.seconds }
-    let(:args) { [attributes, data, registration_ids, deliver_after, app] }
+    let(:old_notification) {
+      n = Rpush::Client::Redis::Adm::Notification.new(attributes)
+      n.data = data
+      n.registration_ids = registration_ids
+      n.deliver_after = deliver_after
+      n.app = app
+      n.save!
+      n
+    }
+    let(:args) { [old_notification, registration_ids, deliver_after] }
 
     it 'sets the given attributes' do
       new_notification = store.create_adm_notification(*args)

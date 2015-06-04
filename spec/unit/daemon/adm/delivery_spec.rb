@@ -181,14 +181,11 @@ describe Rpush::Daemon::Adm::Delivery do
         expect(notif.registration_ids).to_not include('xyz')
       end
 
-      expect(store).to receive(:create_adm_notification) do |attrs, _notification_data, reg_ids, deliver_after, notification_app|
-        expect(attrs.keys).to include('collapse_key')
-        expect(attrs.keys).to include('delay_while_idle')
-        expect(attrs.keys).to include('app_id')
+      expect(store).to receive(:create_adm_notification) do |old_notification, reg_ids, deliver_after|
+        expect(old_notification).to eq notification
 
         expect(reg_ids).to eq ['xyz']
         expect(deliver_after).to eq now + 1.hour
-        expect(notification_app).to eq notification.app
       end
 
       expect(delivery).to receive(:mark_delivered)
